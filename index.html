@@ -1,698 +1,980 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fractions — Opérations | PLAI</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLAI - Jeu de Correspondance d'Opérations</title>
+    <style>
+        :root { --plai: #1e1b4b; --pink: #ec4899; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f8f7ff;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 0 24px;
+            background-color: var(--plai);
+            height: 52px;
+            margin-bottom: 24px;
+        }
+        header img { height: 36px; }
+        .header-divider { width:1px; height:30px; background:rgba(255,255,255,.3); }
+        h1 { font-size: .95rem; font-weight: 500; margin: 0; color: rgba(255,255,255,.85); }
+        .mode-switch { text-align: right; margin-bottom: 16px; }
+        button {
+            padding: 8px 16px;
+            background-color: var(--pink);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 4px;
+            font-weight: 600;
+            transition: opacity .2s;
+        }
+        button:hover { opacity: .85; }
+        .toggle-button {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .toggle-button:hover { background-color: #e5e7eb; opacity: 1; }
+        
+        .content-panel {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .password-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        
+        .modal-content {
+            background-color: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 30px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+        
+        input[type="text"], input[type="number"], select {
+            padding: 10px;
+            margin: 10px 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        input[type="number"] {
+            width: 60px;
+            text-align: center;
+        }
+        
+        .element {
+            width: 150px;
+            height: 150px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            vertical-align: top;
+            position: relative;
+        }
+        
+        .element.selected {
+            box-shadow: 0 0 0 4px #4a90e2;
+        }
+        
+        .math-element {
+            background-color: #e6f2ff;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        
+        .circle-element {
+            background-color: #e6ffe6;
+        }
+        
+        .rect-element {
+            background-color: #ffe6e6;
+        }
+        
+        .fraction {
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        .fraction > span {
+            display: block;
+            padding: 0.1em;
+        }
+        
+        .fraction span.numerator {
+            border-bottom: 1px solid black;
+        }
+        
+        .fraction span.denominator {
+            border-top: 1px solid black;
+        }
+        
+        .element.matched {
+            opacity: 0.5;
+            background-color: #f0f0f0 !important;
+            transition: opacity 0.3s, background-color 0.3s;
+        }
 
-    body {
-      font-family: system-ui, 'Segoe UI', sans-serif;
-      background: #f8f7ff;
-      color: #1e1b4b;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ── HEADER ── */
-    header {
-      background: #1e1b4b;
-      color: #fff;
-      padding: 14px 28px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-shrink: 0;
-    }
-    .logo-wrap img {
-      height: 48px;
-      width: auto;
-      display: block;
-    }
-    .logo-fallback {
-      font-size: 1.6rem;
-      font-weight: 800;
-      letter-spacing: 1px;
-      color: #fff;
-    }
-    .logo-fallback span { color: #ec4899; }
-    header h1 {
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    /* ── MAIN ── */
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 32px 16px 140px;
-      gap: 32px;
-    }
-
-    /* ── ZONE DE SAISIE ── */
-    .input-zone {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 2px 16px rgba(30,27,75,.10);
-      padding: 28px 36px;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .fraction-input {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-    .fraction-input input {
-      width: 72px;
-      height: 48px;
-      text-align: center;
-      font-size: 1.4rem;
-      font-weight: 700;
-      border: 2px solid #ddd6fe;
-      border-radius: 8px;
-      color: #1e1b4b;
-      outline: none;
-      transition: border-color .2s;
-      -moz-appearance: textfield;
-    }
-    .fraction-input input::-webkit-outer-spin-button,
-    .fraction-input input::-webkit-inner-spin-button { -webkit-appearance: none; }
-    .fraction-input input:focus { border-color: #ec4899; }
-    .fraction-bar {
-      width: 72px;
-      height: 3px;
-      background: #1e1b4b;
-      border-radius: 2px;
-    }
-
-    .op-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .op-row {
-      display: flex;
-      gap: 8px;
-    }
-    .op-btn {
-      width: 44px;
-      height: 44px;
-      border: 2px solid #ddd6fe;
-      border-radius: 8px;
-      background: #fff;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #1e1b4b;
-      cursor: pointer;
-      transition: background .15s, border-color .15s, color .15s;
-    }
-    .op-btn:hover { border-color: #ec4899; color: #ec4899; }
-    .op-btn.active {
-      background: #ec4899;
-      border-color: #ec4899;
-      color: #fff;
-    }
-
-    .calc-btn {
-      height: 56px;
-      padding: 0 28px;
-      background: #ec4899;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-size: 1.05rem;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: .5px;
-      transition: background .15s, transform .1s;
-      white-space: nowrap;
-    }
-    .calc-btn:hover { background: #db2777; }
-    .calc-btn:active { transform: scale(.97); }
-
-    .equals-symbol {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #1e1b4b;
-      user-select: none;
-    }
-
-    /* ── ÉTAPES ── */
-    #steps-container {
-      width: 100%;
-      max-width: 680px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .step-card {
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 2px 12px rgba(30,27,75,.08);
-      padding: 22px 26px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .step-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #1e1b4b;
-    }
-    .step-title span {
-      display: inline-block;
-      background: #ec4899;
-      color: #fff;
-      border-radius: 20px;
-      padding: 2px 12px;
-      font-size: .85rem;
-      margin-right: 8px;
-    }
-    .step-text {
-      font-size: .95rem;
-      color: #374151;
-      line-height: 1.6;
-    }
-    .step-text strong { color: #1e1b4b; }
-    .step-bars {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      align-items: flex-end;
-    }
-    .bar-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      align-items: flex-start;
-    }
-    .bar-label {
-      font-size: .82rem;
-      font-weight: 600;
-      color: #6b7280;
-    }
-
-    /* ── RÉSULTAT FINAL ── */
-    .result-card {
-      background: #fdf2f8;
-      border: 2px solid #ec4899;
-      border-radius: 16px;
-      padding: 28px 36px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      align-items: center;
-    }
-    .result-card h2 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #1e1b4b;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .result-fraction {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-    .result-num, .result-den {
-      font-size: 3rem;
-      font-weight: 800;
-      color: #ec4899;
-      line-height: 1;
-    }
-    .result-bar-h {
-      width: 80px;
-      height: 4px;
-      background: #ec4899;
-      border-radius: 2px;
-    }
-    .result-mixed {
-      font-size: 1.1rem;
-      color: #6b7280;
-      margin-top: 4px;
-    }
-    .result-integer {
-      font-size: 3rem;
-      font-weight: 800;
-      color: #ec4899;
-    }
-
-    /* ── BANDE SCI-NOTE ── */
-    .sci-note {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #1e1b4b;
-      color: #c7d2fe;
-      font-size: .78rem;
-      line-height: 1.5;
-      padding: 10px 24px;
-      z-index: 100;
-    }
-    .sci-note strong { color: #ec4899; }
-
-    /* ── ERREUR SAISIE ── */
-    .error-msg {
-      background: #fef2f2;
-      border: 1.5px solid #fca5a5;
-      color: #b91c1c;
-      border-radius: 8px;
-      padding: 10px 18px;
-      font-size: .9rem;
-      width: 100%;
-      max-width: 680px;
-    }
-
-    /* animation "on inverse" */
-    @keyframes pulse-rose {
-      0%, 100% { opacity: 1; }
-      50% { opacity: .4; }
-    }
-    .invert-arrow {
-      display: inline-block;
-      color: #ec4899;
-      font-weight: 700;
-      animation: pulse-rose 1.2s ease-in-out 3;
-    }
-  </style>
+        #game-elements {
+            text-align: center;
+        }
+        
+        .operation-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .operation-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        
+        .operation-item {
+            padding: 8px;
+            margin: 5px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .operation-item button {
+            padding: 3px 8px;
+            font-size: 12px;
+            background-color: #f44336;
+        }
+        
+        .teacher-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .teacher-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-
-<!-- ══════════════════════════════════════
-     HEADER
-══════════════════════════════════════ -->
-<header>
-  <div class="logo-wrap">
-    <img src="PLAI.jpg" alt="Logo PLAI"
-         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-    <div class="logo-fallback" style="display:none;">PLA<span>I</span></div>
-  </div>
-  <h1>Fractions — Opérations</h1>
-</header>
-
-<!-- ══════════════════════════════════════
-     MAIN
-══════════════════════════════════════ -->
-<main>
-
-  <!-- Zone de saisie -->
-  <div class="input-zone">
-
-    <!-- Fraction 1 -->
-    <div class="fraction-input">
-      <input type="number" id="n1" value="3" min="-20" max="20" aria-label="Numérateur 1" />
-      <div class="fraction-bar"></div>
-      <input type="number" id="d1" value="4" min="1" max="20" aria-label="Dénominateur 1" />
+    <div class="container">
+        <header>
+            <img src="PLAI.jpg" alt="Logo PLAI">
+            <div class="header-divider"></div>
+            <h1>Fractions — Opérations · Jeu de correspondance</h1>
+        </header>
+        
+        <div class="mode-switch">
+            <button class="toggle-button" id="teacher-mode-btn">Mode Enseignant</button>
+        </div>
+        
+        <!-- Panneau Mode Élève -->
+        <div id="student-panel" class="content-panel">
+            <div style="background-color: #e9e5d9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                <h2>Calcule et trouve les correspondances !</h2>
+                <p>Associe chaque opération avec le camembert et le rectangle qui représentent son résultat.</p>
+            </div>
+            
+            <div id="game-elements">
+                <!-- Les éléments de jeu seront insérés ici -->
+            </div>
+            
+            <div id="feedback" style="margin-top: 20px; padding: 15px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
+        </div>
+        
+        <!-- Panneau Mode Enseignant (caché par défaut) -->
+        <div id="teacher-panel" class="content-panel hidden">
+            <h2>Créer un exercice avec des opérations sur les fractions</h2>
+            
+            <div class="teacher-grid">
+                <div>
+                    <h3>Ajouter une opération</h3>
+                    <div class="operation-container">
+                        <!-- Première fraction -->
+                        <input type="number" id="num1" min="0" max="20" value="1">
+                        <span>/</span>
+                        <input type="number" id="denom1" min="1" max="20" value="2">
+                        
+                        <!-- Opérateur -->
+                        <select id="operator">
+                            <option value="+">+</option>
+                            <option value="-">-</option>
+                            <option value="×">×</option>
+                            <option value="÷">÷</option>
+                        </select>
+                        
+                        <!-- Seconde fraction -->
+                        <input type="number" id="num2" min="0" max="20" value="1">
+                        <span>/</span>
+                        <input type="number" id="denom2" min="1" max="20" value="4">
+                    </div>
+                    
+                    <button id="add-operation-btn">Ajouter cette opération</button>
+                    
+                    <div class="operation-list" id="operation-list">
+                        <!-- Les opérations ajoutées apparaîtront ici -->
+                    </div>
+                </div>
+                
+                <div>
+                    <h3>Options</h3>
+                    <p>Nombre maximum d'opérations (entre 3 et 10) :</p>
+                    <input type="number" id="max-operations" min="3" max="10" value="6" style="width: 80px;">
+                    
+                    <div style="margin-top: 20px;">
+                        <button id="generate-exercise-btn">Générer l'exercice</button>
+                        <button id="back-to-student-btn">Retour au mode élève</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Boîte de dialogue de mot de passe -->
+        <div id="password-modal" class="password-modal">
+            <div class="modal-content">
+                <h3>Mode Enseignant</h3>
+                <p>Veuillez entrer le mot de passe :</p>
+                <input type="text" id="password-input">
+                <div>
+                    <button id="validate-password-btn">Valider</button>
+                    <button id="cancel-password-btn">Annuler</button>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <!-- Boutons opération -->
-    <div class="op-buttons">
-      <div class="op-row">
-        <button class="op-btn active" data-op="+" aria-label="Addition">+</button>
-        <button class="op-btn" data-op="-" aria-label="Soustraction">−</button>
-      </div>
-      <div class="op-row">
-        <button class="op-btn" data-op="×" aria-label="Multiplication">×</button>
-        <button class="op-btn" data-op="÷" aria-label="Division">÷</button>
-      </div>
-    </div>
-
-    <!-- Fraction 2 -->
-    <div class="fraction-input">
-      <input type="number" id="n2" value="1" min="-20" max="20" aria-label="Numérateur 2" />
-      <div class="fraction-bar"></div>
-      <input type="number" id="d2" value="2" min="1" max="20" aria-label="Dénominateur 2" />
-    </div>
-
-    <span class="equals-symbol">=</span>
-
-    <!-- Bouton calculer -->
-    <button class="calc-btn" id="btn-calc">= CALCULER</button>
-
-  </div>
-
-  <!-- Zone résultat / étapes -->
-  <div id="steps-container"></div>
-
-</main>
-
-<!-- ══════════════════════════════════════
-     BANDE SCI-NOTE
-══════════════════════════════════════ -->
-<div class="sci-note">
-  <strong>Duveau (2022)</strong> — l'erreur dans l'apprentissage des fractions est une étape normale ; rendre visible chaque étape de calcul permet à l'élève d'identifier précisément l'obstacle.&nbsp;&bull;&nbsp;<strong>Morisse (2016)</strong> — la compréhension des fractions ordinaires précède celle des fractions décimales ; des représentations visuelles étape par étape réduisent la charge cognitive.
-</div>
-
-
-<!-- ══════════════════════════════════════
-     JAVASCRIPT
-══════════════════════════════════════ -->
-<script>
-"use strict";
-
-/* ── Utilitaires mathématiques ── */
-function gcd(a, b) { return b === 0 ? Math.abs(a) : gcd(b, a % b); }
-function lcm(a, b) { return Math.abs(a * b) / gcd(Math.abs(a), Math.abs(b)); }
-function simplify(n, d) {
-  if (d === 0) return { n: NaN, d: 1 };
-  const sign = d < 0 ? -1 : 1;
-  const absN = Math.abs(n), absD = Math.abs(d);
-  const g = gcd(absN, absD);
-  return { n: sign * n / g, d: sign * d / g };
-}
-
-/* ── Sélection opération ── */
-let currentOp = '+';
-document.querySelectorAll('.op-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentOp = btn.dataset.op;
-  });
-});
-
-/* ── SVG bar helper ── */
-function drawBar(n, d, color, width, height) {
-  if (d <= 0 || n < 0) d = Math.max(d, 1);
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('width', width);
-  svg.setAttribute('height', height);
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.setAttribute('role', 'img');
-  svg.style.borderRadius = '6px';
-  svg.style.overflow = 'hidden';
-  svg.style.display = 'block';
-
-  const cols = Math.min(Math.max(d, 1), 40);
-  const filled = Math.min(Math.max(n, 0), cols);
-  const colW = width / cols;
-
-  for (let i = 0; i < cols; i++) {
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', i * colW);
-    rect.setAttribute('y', 0);
-    rect.setAttribute('width', colW);
-    rect.setAttribute('height', height);
-    rect.setAttribute('fill', i < filled ? color : '#fce7f3');
-    rect.setAttribute('stroke', '#fff');
-    rect.setAttribute('stroke-width', '1.5');
-    svg.appendChild(rect);
-  }
-  return svg;
-}
-
-/* ── Créer une carte d'étape ── */
-function makeCard(stepNum, stepTitle, textHTML, barsData) {
-  const card = document.createElement('div');
-  card.className = 'step-card';
-
-  const titleEl = document.createElement('div');
-  titleEl.className = 'step-title';
-  titleEl.innerHTML = `<span>Étape ${stepNum}</span>${stepTitle}`;
-  card.appendChild(titleEl);
-
-  if (barsData && barsData.length > 0) {
-    const barsRow = document.createElement('div');
-    barsRow.className = 'step-bars';
-    barsData.forEach(b => {
-      const wrap = document.createElement('div');
-      wrap.className = 'bar-wrap';
-      const lbl = document.createElement('div');
-      lbl.className = 'bar-label';
-      lbl.textContent = b.label;
-      wrap.appendChild(lbl);
-      wrap.appendChild(drawBar(b.n, b.d, b.color || '#ec4899', b.w || 320, b.h || 52));
-      barsRow.appendChild(wrap);
-    });
-    card.appendChild(barsRow);
-  }
-
-  if (textHTML) {
-    const txt = document.createElement('div');
-    txt.className = 'step-text';
-    txt.innerHTML = textHTML;
-    card.appendChild(txt);
-  }
-
-  return card;
-}
-
-/* ── Carte résultat final ── */
-function makeResultCard(n, d) {
-  const card = document.createElement('div');
-  card.className = 'result-card';
-
-  const title = document.createElement('h2');
-  title.textContent = 'Résultat';
-  card.appendChild(title);
-
-  const s = simplify(n, d);
-  const sn = s.n, sd = s.d;
-
-  if (sd === 1) {
-    // Entier
-    const intEl = document.createElement('div');
-    intEl.className = 'result-integer';
-    intEl.textContent = sn;
-    card.appendChild(intEl);
-  } else {
-    const fracWrap = document.createElement('div');
-    fracWrap.className = 'result-fraction';
-    const numEl = document.createElement('div');
-    numEl.className = 'result-num';
-    numEl.textContent = sn;
-    const barEl = document.createElement('div');
-    barEl.className = 'result-bar-h';
-    const denEl = document.createElement('div');
-    denEl.className = 'result-den';
-    denEl.textContent = sd;
-    fracWrap.appendChild(numEl);
-    fracWrap.appendChild(barEl);
-    fracWrap.appendChild(denEl);
-    card.appendChild(fracWrap);
-
-    // Mixte si impropre
-    if (Math.abs(sn) > sd) {
-      const entier = Math.trunc(sn / sd);
-      const reste = Math.abs(sn % sd);
-      if (reste !== 0) {
-        const mixed = document.createElement('div');
-        mixed.className = 'result-mixed';
-        mixed.innerHTML = `Écriture mixte : <strong>${entier}</strong> et <strong>${reste}/${sd}</strong>`;
-        card.appendChild(mixed);
-      }
-    }
-  }
-
-  return card;
-}
-
-/* ── Afficher les étapes ── */
-function showSteps(n1, d1, n2, d2, op) {
-  const container = document.getElementById('steps-container');
-  container.innerHTML = '';
-
-  let cards = [];
-
-  if (op === '+' || op === '-') {
-
-    // Étape 1 — Visualisation initiale
-    cards.push(makeCard(1, 'Visualisation initiale',
-      `Voici les deux fractions : <strong>${n1}/${d1}</strong> et <strong>${n2}/${d2}</strong>`,
-      [
-        { label: `${n1}/${d1}`, n: n1, d: d1, color: '#ec4899', w: 300, h: 52 },
-        { label: `${n2}/${d2}`, n: n2, d: d2, color: '#a855f7', w: 300, h: 52 },
-      ]
-    ));
-
-    // Étape 2 — Réduction au même dénominateur
-    const l = lcm(d1, d2);
-    const newN1 = n1 * (l / d1);
-    const newN2 = n2 * (l / d2);
-    let convText = `On cherche le PPCM de <strong>${d1}</strong> et <strong>${d2}</strong> : PPCM = <strong>${l}</strong><br>`;
-    convText += `<br><strong>${n1}/${d1}</strong> → <strong>${n1} × ${l/d1}</strong> / <strong>${d1} × ${l/d1}</strong> = <strong>${newN1}/${l}</strong>`;
-    convText += `<br><strong>${n2}/${d2}</strong> → <strong>${n2} × ${l/d2}</strong> / <strong>${d2} × ${l/d2}</strong> = <strong>${newN2}/${l}</strong>`;
-
-    cards.push(makeCard(2, 'Réduction au même dénominateur',
-      convText,
-      [
-        { label: `${newN1}/${l}`, n: newN1, d: l, color: '#ec4899', w: 300, h: 52 },
-        { label: `${newN2}/${l}`, n: newN2, d: l, color: '#a855f7', w: 300, h: 52 },
-      ]
-    ));
-
-    // Étape 3 — Calcul
-    const rawN = op === '+' ? newN1 + newN2 : newN1 - newN2;
-    const rawD = l;
-    let calcText = op === '+'
-      ? `On additionne les numérateurs : <strong>${newN1} + ${newN2} = ${rawN}</strong>, le dénominateur reste <strong>${rawD}</strong>`
-      : `On soustrait les numérateurs : <strong>${newN1} − ${newN2} = ${rawN}</strong>, le dénominateur reste <strong>${rawD}</strong>`;
-    calcText += `<br>Résultat intermédiaire : <strong>${rawN}/${rawD}</strong>`;
-
-    cards.push(makeCard(3, 'Calcul',
-      calcText,
-      [{ label: `${rawN}/${rawD}`, n: rawN, d: rawD, color: '#ec4899', w: 300, h: 52 }]
-    ));
-
-    // Étape 4 — Simplification
-    const s = simplify(rawN, rawD);
-    let simpText;
-    if (s.n === rawN && s.d === rawD) {
-      simpText = `La fraction <strong>${rawN}/${rawD}</strong> est <em>déjà irréductible</em> — aucune simplification possible.`;
-    } else {
-      const g = gcd(Math.abs(rawN), rawD);
-      simpText = `On divise numérateur et dénominateur par leur PGCD = <strong>${g}</strong><br>`;
-      simpText += `<strong>${rawN} ÷ ${g} = ${s.n}</strong> &nbsp;/&nbsp; <strong>${rawD} ÷ ${g} = ${s.d}</strong>`;
-    }
-    cards.push(makeCard(4, 'Simplification', simpText,
-      [{ label: `${s.n}/${s.d}`, n: s.n, d: s.d, color: '#ec4899', w: 300, h: 52 }]
-    ));
-    cards.push(makeResultCard(rawN, rawD));
-
-  } else if (op === '×') {
-
-    // Étape 1
-    cards.push(makeCard(1, 'Visualisation des deux fractions',
-      `Les deux fractions : <strong>${n1}/${d1}</strong> et <strong>${n2}/${d2}</strong>`,
-      [
-        { label: `${n1}/${d1}`, n: n1, d: d1, color: '#ec4899', w: 300, h: 52 },
-        { label: `${n2}/${d2}`, n: n2, d: d2, color: '#a855f7', w: 300, h: 52 },
-      ]
-    ));
-
-    // Étape 2 — Multiplication
-    const rawN = n1 * n2;
-    const rawD = d1 * d2;
-    const multText = `On multiplie numérateur par numérateur, dénominateur par dénominateur :<br>`
-      + `<strong>${n1} × ${n2} = ${rawN}</strong> &nbsp;/&nbsp; <strong>${d1} × ${d2} = ${rawD}</strong><br>`
-      + `Résultat intermédiaire : <strong>${rawN}/${rawD}</strong>`;
-
-    cards.push(makeCard(2, 'Multiplication', multText,
-      [{ label: `${rawN}/${rawD}`, n: rawN, d: rawD, color: '#ec4899', w: 300, h: 52 }]
-    ));
-
-    // Étape 3 — Simplification
-    const s = simplify(rawN, rawD);
-    let simpText;
-    if (s.n === rawN && s.d === rawD) {
-      simpText = `La fraction <strong>${rawN}/${rawD}</strong> est <em>déjà irréductible</em>.`;
-    } else {
-      const g = gcd(Math.abs(rawN), rawD);
-      simpText = `PGCD(${rawN}, ${rawD}) = <strong>${g}</strong><br>`
-        + `<strong>${rawN} ÷ ${g} = ${s.n}</strong> &nbsp;/&nbsp; <strong>${rawD} ÷ ${g} = ${s.d}</strong>`;
-    }
-    cards.push(makeCard(3, 'Simplification', simpText,
-      [{ label: `${s.n}/${s.d}`, n: s.n, d: s.d, color: '#ec4899', w: 300, h: 52 }]
-    ));
-    cards.push(makeResultCard(rawN, rawD));
-
-  } else if (op === '÷') {
-
-    // Étape 1
-    cards.push(makeCard(1, 'Visualisation des deux fractions',
-      `Les deux fractions : <strong>${n1}/${d1}</strong> et <strong>${n2}/${d2}</strong>`,
-      [
-        { label: `${n1}/${d1}`, n: n1, d: d1, color: '#ec4899', w: 300, h: 52 },
-        { label: `${n2}/${d2}`, n: n2, d: d2, color: '#a855f7', w: 300, h: 52 },
-      ]
-    ));
-
-    // Étape 2 — Inverser
-    const invText = `Pour diviser par une fraction, on <span class="invert-arrow">&#x21BB; on inverse !</span> la seconde fraction :<br>`
-      + `<strong>${n2}/${d2}</strong> devient <strong>${d2}/${n2}</strong><br>`
-      + `Numérateur et dénominateur échangent leurs places.`;
-
-    cards.push(makeCard(2, 'Inverser la seconde fraction', invText,
-      [
-        { label: `${n2}/${d2} → ${d2}/${n2}`, n: d2, d: n2 > 0 ? n2 : 1, color: '#a855f7', w: 300, h: 52 },
-      ]
-    ));
-
-    // Étape 3 — On multiplie
-    const rawN = n1 * d2;
-    const rawD = d1 * n2;
-    const multText = `Diviser = multiplier par l'inverse :<br>`
-      + `<strong>${n1}/${d1}</strong> × <strong>${d2}/${n2}</strong><br>`
-      + `<strong>${n1} × ${d2} = ${rawN}</strong> &nbsp;/&nbsp; <strong>${d1} × ${n2} = ${rawD}</strong><br>`
-      + `Résultat intermédiaire : <strong>${rawN}/${rawD}</strong>`;
-
-    cards.push(makeCard(3, 'On multiplie', multText,
-      [{ label: `${rawN}/${rawD}`, n: rawN, d: Math.abs(rawD), color: '#ec4899', w: 300, h: 52 }]
-    ));
-
-    // Étape 4 — Simplification
-    const s = simplify(rawN, rawD);
-    let simpText;
-    if (s.n === rawN && s.d === rawD) {
-      simpText = `La fraction <strong>${rawN}/${rawD}</strong> est <em>déjà irréductible</em>.`;
-    } else {
-      const g = gcd(Math.abs(rawN), Math.abs(rawD));
-      simpText = `PGCD(${Math.abs(rawN)}, ${Math.abs(rawD)}) = <strong>${g}</strong><br>`
-        + `<strong>${rawN} ÷ ${g} = ${s.n}</strong> &nbsp;/&nbsp; <strong>${rawD} ÷ ${g} = ${s.d}</strong>`;
-    }
-    cards.push(makeCard(4, 'Simplification', simpText,
-      [{ label: `${s.n}/${s.d}`, n: s.n, d: s.d, color: '#ec4899', w: 300, h: 52 }]
-    ));
-    cards.push(makeResultCard(rawN, rawD));
-  }
-
-  cards.forEach(c => container.appendChild(c));
-
-  // Scroll vers les étapes
-  container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-/* ── Validation et lancement ── */
-document.getElementById('btn-calc').addEventListener('click', () => {
-  const container = document.getElementById('steps-container');
-  container.innerHTML = '';
-
-  const n1 = parseInt(document.getElementById('n1').value, 10);
-  const d1 = parseInt(document.getElementById('d1').value, 10);
-  const n2 = parseInt(document.getElementById('n2').value, 10);
-  const d2 = parseInt(document.getElementById('d2').value, 10);
-
-  // Validation
-  const errors = [];
-  if (isNaN(n1) || isNaN(d1) || isNaN(n2) || isNaN(d2))
-    errors.push('Tous les champs doivent être remplis.');
-  if (d1 <= 0) errors.push('Le dénominateur de la première fraction doit être positif (≥ 1).');
-  if (d2 <= 0) errors.push('Le dénominateur de la seconde fraction doit être positif (≥ 1).');
-  if (currentOp === '÷' && n2 === 0) errors.push('Impossible de diviser par zéro (numérateur de la seconde fraction = 0).');
-
-  if (errors.length > 0) {
-    const errEl = document.createElement('div');
-    errEl.className = 'error-msg';
-    errEl.innerHTML = errors.map(e => `⚠️ ${e}`).join('<br>');
-    container.appendChild(errEl);
-    return;
-  }
-
-  showSteps(n1, d1, n2, d2, currentOp);
-});
-
-/* ── Calcul au chargement avec valeurs par défaut ── */
-window.addEventListener('DOMContentLoaded', () => {
-  // petit délai pour laisser le DOM se stabiliser
-  setTimeout(() => document.getElementById('btn-calc').click(), 80);
-});
-</script>
-
+    
+    <script>
+    // Encapsuler toute l'application dans une fonction auto-exécutée
+    (function() {
+        // Définir les opérations par défaut
+        const defaultOperations = [
+            { 
+                fraction1: { numerator: 1, denominator: 2 },
+                fraction2: { numerator: 1, denominator: 4 },
+                operator: "+",
+                result: { numerator: 3, denominator: 4 },
+                expression: "1/2 + 1/4"
+            },
+            { 
+                fraction1: { numerator: 3, denominator: 4 },
+                fraction2: { numerator: 1, denominator: 4 },
+                operator: "-",
+                result: { numerator: 1, denominator: 2 },
+                expression: "3/4 - 1/4"
+            },
+            { 
+                fraction1: { numerator: 2, denominator: 3 },
+                fraction2: { numerator: 3, denominator: 4 },
+                operator: "×",
+                result: { numerator: 1, denominator: 2 },
+                expression: "2/3 × 3/4"
+            },
+            { 
+                fraction1: { numerator: 1, denominator: 2 },
+                fraction2: { numerator: 2, denominator: 1 },
+                operator: "÷",
+                result: { numerator: 1, denominator: 4 },
+                expression: "1/2 ÷ 2"
+            },
+            { 
+                fraction1: { numerator: 1, denominator: 3 },
+                fraction2: { numerator: 2, denominator: 3 },
+                operator: "+",
+                result: { numerator: 1, denominator: 1 },
+                expression: "1/3 + 2/3"
+            },
+            { 
+                fraction1: { numerator: 5, denominator: 6 },
+                fraction2: { numerator: 1, denominator: 6 },
+                operator: "-",
+                result: { numerator: 2, denominator: 3 },
+                expression: "5/6 - 1/6"
+            }
+        ];
+        
+        // Variables pour le jeu
+        let operations = [...defaultOperations];
+        let selectedElements = [];
+        let userOperations = [];
+        
+        // Fonction pour calculer le PGCD
+        function pgcd(a, b) {
+            a = Math.abs(a);
+            b = Math.abs(b);
+            if (b > a) {
+                const temp = a;
+                a = b;
+                b = temp;
+            }
+            while (b !== 0) {
+                const temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+        }
+        
+        // Fonction pour simplifier une fraction
+        function simplifyFraction(numerator, denominator) {
+            if (numerator === 0) return { numerator: 0, denominator: 1 };
+            if (denominator === 0) return { numerator: 1, denominator: 0 }; // Cas division par zéro
+            
+            const divisor = pgcd(numerator, denominator);
+            return {
+                numerator: numerator / divisor,
+                denominator: denominator / divisor
+            };
+        }
+        
+        // Fonction pour calculer le résultat d'une opération
+        function calculateFractionOperation(frac1, frac2, operator) {
+            let resultNum, resultDenom;
+            
+            switch (operator) {
+                case "+":
+                    resultNum = frac1.numerator * frac2.denominator + frac2.numerator * frac1.denominator;
+                    resultDenom = frac1.denominator * frac2.denominator;
+                    break;
+                case "-":
+                    resultNum = frac1.numerator * frac2.denominator - frac2.numerator * frac1.denominator;
+                    resultDenom = frac1.denominator * frac2.denominator;
+                    break;
+                case "×":
+                    resultNum = frac1.numerator * frac2.numerator;
+                    resultDenom = frac1.denominator * frac2.denominator;
+                    break;
+                case "÷":
+                    resultNum = frac1.numerator * frac2.denominator;
+                    resultDenom = frac1.denominator * frac2.numerator;
+                    break;
+                default:
+                    return null;
+            }
+            
+            return simplifyFraction(resultNum, resultDenom);
+        }
+        
+        // Fonction pour créer un SVG de camembert
+        function createCircleSVG(num, denom) {
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            
+            // Pour les fractions impropres (> 1), on affiche plusieurs cercles alignés horizontalement
+            const wholeNumber = Math.floor(num / denom);
+            const remainder = num % denom;
+            
+            if (wholeNumber > 0) {
+                // Calculer combien de cercles complets et un partiel
+                const totalCircles = Math.min(3, wholeNumber + (remainder > 0 ? 1 : 0));
+                
+                // Définir un viewBox plus large pour accommoder les cercles alignés horizontalement
+                svg.setAttribute("viewBox", `0 0 ${totalCircles * 110} 100`);
+                svg.style.width = `${totalCircles * 40}px`;
+                svg.style.height = "80px";
+                
+                // Taille de cercle et espacement
+                const circleRadius = 40;
+                const spacing = 10;
+                
+                for (let c = 0; c < Math.min(wholeNumber, 3); c++) {
+                    // Position X du centre du cercle courant
+                    const centerX = c * (2 * circleRadius + spacing) + circleRadius + 10;
+                    
+                    // Cercle complet
+                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circle.setAttribute("cx", centerX);
+                    circle.setAttribute("cy", "50");
+                    circle.setAttribute("r", circleRadius);
+                    circle.setAttribute("fill", "#4CAF50");
+                    circle.setAttribute("stroke", "#333");
+                    circle.setAttribute("stroke-width", "1");
+                    svg.appendChild(circle);
+                }
+                
+                // Ajouter le cercle partiel pour le reste si nécessaire
+                if (remainder > 0 && wholeNumber < 3) {
+                    const centerX = wholeNumber * (2 * circleRadius + spacing) + circleRadius + 10;
+                    
+                    // Base du cercle partiel
+                    const baseCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    baseCircle.setAttribute("cx", centerX);
+                    baseCircle.setAttribute("cy", "50");
+                    baseCircle.setAttribute("r", circleRadius);
+                    baseCircle.setAttribute("fill", "white");
+                    baseCircle.setAttribute("stroke", "#333");
+                    baseCircle.setAttribute("stroke-width", "1");
+                    svg.appendChild(baseCircle);
+                    
+                    // Sections colorées pour le reste
+                    for (let i = 0; i < remainder; i++) {
+                        const slice = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        const startAngle = (i * 360 / denom) * Math.PI / 180;
+                        const endAngle = ((i + 1) * 360 / denom) * Math.PI / 180;
+                        
+                        const x1 = centerX + circleRadius * Math.cos(startAngle);
+                        const y1 = 50 + circleRadius * Math.sin(startAngle);
+                        const x2 = centerX + circleRadius * Math.cos(endAngle);
+                        const y2 = 50 + circleRadius * Math.sin(endAngle);
+                        
+                        const largeArc = (endAngle - startAngle > Math.PI) ? 1 : 0;
+                        
+                        const d = `M ${centerX} 50 L ${x1} ${y1} A ${circleRadius} ${circleRadius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+                        slice.setAttribute("d", d);
+                        slice.setAttribute("fill", "#4CAF50");
+                        svg.appendChild(slice);
+                    }
+                    
+                    // Lignes de division pour le cercle partiel
+                    for (let i = 0; i < denom; i++) {
+                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        const angle = (i * 360 / denom) * Math.PI / 180;
+                        const xEnd = centerX + circleRadius * Math.cos(angle);
+                        const yEnd = 50 + circleRadius * Math.sin(angle);
+                        
+                        line.setAttribute("x1", centerX);
+                        line.setAttribute("y1", "50");
+                        line.setAttribute("x2", xEnd);
+                        line.setAttribute("y2", yEnd);
+                        line.setAttribute("stroke", "#333");
+                        line.setAttribute("stroke-width", "1");
+                        svg.appendChild(line);
+                    }
+                }
+            } else {
+                // Comportement standard pour les fractions ≤ 1
+                svg.setAttribute("viewBox", "0 0 100 100");
+                svg.style.width = "120px";
+                svg.style.height = "120px";
+                
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", "50");
+                circle.setAttribute("cy", "50");
+                circle.setAttribute("r", "45");
+                circle.setAttribute("fill", "white");
+                circle.setAttribute("stroke", "#333");
+                circle.setAttribute("stroke-width", "2");
+                svg.appendChild(circle);
+                
+                // Sections colorées
+                for (let i = 0; i < num; i++) {
+                    const slice = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    const startAngle = (i * 360 / denom) * Math.PI / 180;
+                    const endAngle = ((i + 1) * 360 / denom) * Math.PI / 180;
+                    
+                    const x1 = 50 + 45 * Math.cos(startAngle);
+                    const y1 = 50 + 45 * Math.sin(startAngle);
+                    const x2 = 50 + 45 * Math.cos(endAngle);
+                    const y2 = 50 + 45 * Math.sin(endAngle);
+                    
+                    const largeArc = (endAngle - startAngle > Math.PI) ? 1 : 0;
+                    
+                    const d = `M 50 50 L ${x1} ${y1} A 45 45 0 ${largeArc} 1 ${x2} ${y2} Z`;
+                    slice.setAttribute("d", d);
+                    slice.setAttribute("fill", "#4CAF50");
+                    svg.appendChild(slice);
+                }
+                
+                // Lignes de division
+                for (let i = 0; i < denom; i++) {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    const angle = (i * 360 / denom) * Math.PI / 180;
+                    const x = 50 + 45 * Math.cos(angle);
+                    const y = 50 + 45 * Math.sin(angle);
+                    
+                    line.setAttribute("x1", "50");
+                    line.setAttribute("y1", "50");
+                    line.setAttribute("x2", x);
+                    line.setAttribute("y2", y);
+                    line.setAttribute("stroke", "#333");
+                    line.setAttribute("stroke-width", "1");
+                    svg.appendChild(line);
+                }
+            }
+            
+            return svg;
+        }
+        
+        // Fonction pour créer un SVG de rectangle
+        function createRectSVG(num, denom) {
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            
+            // Pour les fractions impropres (> 1), on affiche plusieurs rectangles
+            const wholeNumber = Math.floor(num / denom);
+            const remainder = num % denom;
+            
+            if (wholeNumber > 0) {
+                // Définir la hauteur en fonction du nombre de rectangles
+                const totalRects = Math.min(3, wholeNumber + (remainder > 0 ? 1 : 0));
+                svg.setAttribute("viewBox", `0 0 100 ${totalRects * 20}`);
+                svg.style.width = "120px";
+                svg.style.height = `${totalRects * 20 + 20}px`;
+                
+                // Ajouter des rectangles complets
+                for (let r = 0; r < Math.min(wholeNumber, 3); r++) {
+                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rect.setAttribute("x", "2");
+                    rect.setAttribute("y", `${r * 20 + 2}`);
+                    rect.setAttribute("width", "96");
+                    rect.setAttribute("height", "16");
+                    rect.setAttribute("fill", "#E57373");
+                    rect.setAttribute("stroke", "#333");
+                    rect.setAttribute("stroke-width", "1");
+                    svg.appendChild(rect);
+                }
+                
+                // Ajouter le rectangle partiel pour le reste si nécessaire
+                if (remainder > 0 && wholeNumber < 3) {
+                    const y = wholeNumber * 20 + 2;
+                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rect.setAttribute("x", "2");
+                    rect.setAttribute("y", y);
+                    rect.setAttribute("width", "96");
+                    rect.setAttribute("height", "16");
+                    rect.setAttribute("fill", "white");
+                    rect.setAttribute("stroke", "#333");
+                    rect.setAttribute("stroke-width", "1");
+                    svg.appendChild(rect);
+                    
+                    // Diviser en sections
+                    const sectionWidth = 96 / denom;
+                    
+                    // Créer les sections colorées
+                    for (let i = 0; i < remainder; i++) {
+                        const section = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                        section.setAttribute("x", 2 + i * sectionWidth);
+                        section.setAttribute("y", y);
+                        section.setAttribute("width", sectionWidth);
+                        section.setAttribute("height", "16");
+                        section.setAttribute("fill", "#E57373");
+                        section.setAttribute("stroke", "#333");
+                        section.setAttribute("stroke-width", "1");
+                        svg.appendChild(section);
+                    }
+                }
+            } else {
+                // Comportement standard pour les fractions ≤ 1
+                svg.setAttribute("viewBox", "0 0 100 30");
+                svg.style.width = "120px";
+                svg.style.height = "50px";
+                
+                // Rectangle de base
+                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute("x", "2");
+                rect.setAttribute("y", "2");
+                rect.setAttribute("width", "96");
+                rect.setAttribute("height", "26");
+                rect.setAttribute("fill", "white");
+                rect.setAttribute("stroke", "#333");
+                rect.setAttribute("stroke-width", "2");
+                svg.appendChild(rect);
+                
+                // Diviser en sections
+                const sectionWidth = 96 / denom;
+                
+                // Créer les sections
+                for (let i = 0; i < denom; i++) {
+                    const section = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    section.setAttribute("x", 2 + i * sectionWidth);
+                    section.setAttribute("y", "2");
+                    section.setAttribute("width", sectionWidth);
+                    section.setAttribute("height", "26");
+                    section.setAttribute("fill", i < num ? "#E57373" : "white");
+                    section.setAttribute("stroke", "#333");
+                    section.setAttribute("stroke-width", "1");
+                    svg.appendChild(section);
+                }
+            }
+            
+            return svg;
+        }
+        
+        // Fonction pour afficher un message de feedback
+        function showFeedback(message, type, autoHide = true) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = message;
+            feedback.style.backgroundColor = type === 'success' ? '#dff0d8' : '#f2dede';
+            feedback.style.color = type === 'success' ? '#3c763d' : '#a94442';
+            
+            if (autoHide) {
+                setTimeout(() => {
+                    feedback.textContent = '';
+                    feedback.style.backgroundColor = '';
+                    feedback.style.color = '';
+                }, 3000);
+            }
+        }
+        
+        // Fonction pour vérifier si les trois éléments sélectionnés correspondent
+        function checkTripleMatch() {
+            // Vérifier si nous avons un élément de chaque type
+            const types = selectedElements.map(el => el.dataset.type);
+            const hasAllTypes = ['math', 'circle', 'rect'].every(type => types.includes(type));
+            
+            // Vérifier si tous les index correspondent
+            const indices = selectedElements.map(el => el.dataset.index);
+            const allSameIndex = indices.every(idx => idx === indices[0]);
+            
+            if (hasAllTypes && allSameIndex) {
+                // C'est une correspondance !
+                selectedElements.forEach(el => {
+                    el.classList.remove('selected');
+                    el.classList.add('matched');
+                    // Ajouter un effet de grisage aux éléments correspondants
+                    el.style.opacity = "0.5";
+                    el.style.backgroundColor = "#f0f0f0";
+                });
+                
+                // Message de succès
+                showFeedback('Excellent ! Vous avez trouvé une correspondance !', 'success');
+                
+                // Vérifier si toutes les correspondances ont été trouvées
+                const allMatched = document.querySelectorAll('.element:not(.matched)').length === 0;
+                
+                if (allMatched) {
+                    showFeedback('Bravo ! Vous avez trouvé toutes les correspondances !', 'success', false);
+                }
+            } else {
+                // Pas de correspondance
+                selectedElements.forEach(el => {
+                    el.classList.remove('selected');
+                });
+                
+                showFeedback('Ces éléments ne correspondent pas. Essayez à nouveau.', 'error');
+            }
+            
+            // Réinitialiser la sélection
+            selectedElements = [];
+        }
+        
+        // Fonction pour gérer le clic sur un élément
+        function handleElementClick(event) {
+            // S'assurer que nous recevons l'élément correct, même si on clique sur un élément enfant
+            let element = event.target;
+            while (!element.classList.contains('element') && element.parentNode) {
+                element = element.parentNode;
+                // Si on clique sur un SVG ou un chemin à l'intérieur d'un SVG, remonter jusqu'à l'élément parent
+                if (element.tagName === 'svg' || element.tagName === 'path' || element.tagName === 'circle' || element.tagName === 'rect') {
+                    continue;
+                }
+            }
+            
+            // Si on n'a pas trouvé d'élément avec la classe 'element', sortir
+            if (!element.classList.contains('element')) {
+                return;
+            }
+            
+            // Ignorer si l'élément est déjà apparié
+            if (element.classList.contains('matched')) {
+                return;
+            }
+            
+            // Si l'élément est déjà sélectionné, le désélectionner
+            if (element.classList.contains('selected')) {
+                element.classList.remove('selected');
+                selectedElements = selectedElements.filter(el => el !== element);
+            } else {
+                // Vérifier si on a déjà sélectionné un élément du même type
+                const sameTypeSelected = selectedElements.some(el => el.dataset.type === element.dataset.type);
+                
+                if (sameTypeSelected) {
+                    // Message d'erreur temporaire
+                    showFeedback('Vous avez déjà sélectionné un élément de ce type. Choisissez un autre type.', 'error');
+                    return;
+                }
+                
+                // Ajouter la sélection
+                element.classList.add('selected');
+                selectedElements.push(element);
+                
+                // Si nous avons sélectionné trois éléments (un de chaque type), vérifier la correspondance
+                if (selectedElements.length === 3) {
+                    checkTripleMatch();
+                }
+            }
+        }
+        
+        // Fonction pour mélanger un tableau
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        // Créer les éléments du jeu
+        function createGameElements() {
+            const container = document.getElementById('game-elements');
+            container.innerHTML = '';
+            
+            // Créer les tableaux pour chaque type d'élément
+            const mathElements = [];
+            const circleElements = [];
+            const rectElements = [];
+            
+            // Créer les éléments pour chaque opération
+            operations.forEach((op, index) => {
+                // Élément mathématique (expression)
+                const mathElement = document.createElement('div');
+                mathElement.className = 'element math-element';
+                mathElement.dataset.type = 'math';
+                mathElement.dataset.index = index;
+                
+                const operationHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center;">
+                        <div class="fraction">
+                            <span class="numerator">${op.fraction1.numerator}</span>
+                            <span class="denominator">${op.fraction1.denominator}</span>
+                        </div>
+                        <span style="margin: 0 5px; font-size: 20px;">${op.operator}</span>
+                        <div class="fraction">
+                            <span class="numerator">${op.fraction2.numerator}</span>
+                            <span class="denominator">${op.fraction2.denominator}</span>
+                        </div>
+                    </div>
+                `;
+                
+                mathElement.innerHTML = operationHTML;
+                mathElements.push(mathElement);
+                
+                // Élément cercle (camembert)
+                const circleElement = document.createElement('div');
+                circleElement.className = 'element circle-element';
+                circleElement.dataset.type = 'circle';
+                circleElement.dataset.index = index;
+                circleElement.appendChild(createCircleSVG(op.result.numerator, op.result.denominator));
+                circleElements.push(circleElement);
+                
+                // Élément rectangle
+                const rectElement = document.createElement('div');
+                rectElement.className = 'element rect-element';
+                rectElement.dataset.type = 'rect';
+                rectElement.dataset.index = index;
+                rectElement.appendChild(createRectSVG(op.result.numerator, op.result.denominator));
+                rectElements.push(rectElement);
+            });
+            
+            // Mélanger les tableaux
+            shuffleArray(mathElements);
+            shuffleArray(circleElements);
+            shuffleArray(rectElements);
+            
+            // Ajouter tous les éléments au conteneur
+            [...mathElements, ...circleElements, ...rectElements].forEach(element => {
+                element.addEventListener('click', handleElementClick);
+                container.appendChild(element);
+            });
+        }
+        
+        // Fonctions pour le mode enseignant
+        
+        // Afficher la modale de mot de passe
+        function showPasswordModal() {
+            document.getElementById('password-modal').style.display = 'flex';
+            document.getElementById('password-input').value = '';
+            document.getElementById('password-input').focus();
+        }
+        
+        // Fermer la modale de mot de passe
+        function closePasswordModal() {
+            document.getElementById('password-modal').style.display = 'none';
+        }
+        
+        // Valider le mot de passe
+        function validatePassword() {
+            const password = document.getElementById('password-input').value;
+            
+            if (password === 'PLAI') {
+                closePasswordModal();
+                document.getElementById('student-panel').classList.add('hidden');
+                document.getElementById('teacher-panel').classList.remove('hidden');
+                
+                // Initialiser la liste des opérations si elle est vide
+                if (userOperations.length === 0) {
+                    userOperations = [...defaultOperations];
+                    updateOperationList();
+                }
+            } else {
+                alert('Mot de passe incorrect !');
+            }
+        }
+        
+        // Ajouter une opération à la liste
+        function addOperation() {
+            const num1 = parseInt(document.getElementById('num1').value);
+            const denom1 = parseInt(document.getElementById('denom1').value);
+            const num2 = parseInt(document.getElementById('num2').value);
+            const denom2 = parseInt(document.getElementById('denom2').value);
+            const operator = document.getElementById('operator').value;
+            
+            // Validation des entrées
+            if (isNaN(num1) || isNaN(denom1) || isNaN(num2) || isNaN(denom2)) {
+                alert("Veuillez entrer des valeurs numériques valides.");
+                return;
+            }
+            
+            if (denom1 === 0 || denom2 === 0) {
+                alert("Les dénominateurs ne peuvent pas être zéro.");
+                return;
+            }
+            
+            if (operator === "÷" && (num2 === 0 && denom2 !== 0)) {
+                alert("Impossible de diviser par zéro.");
+                return;
+            }
+            
+            // Créer l'opération
+            const fraction1 = { numerator: num1, denominator: denom1 };
+            const fraction2 = { numerator: num2, denominator: denom2 };
+            const result = calculateFractionOperation(fraction1, fraction2, operator);
+            
+            const expression = `${num1}/${denom1} ${operator} ${num2}/${denom2}`;
+            
+            const operation = {
+                fraction1,
+                fraction2,
+                operator,
+                result,
+                expression
+            };
+            
+            userOperations.push(operation);
+            updateOperationList();
+        }
+        
+        // Mettre à jour l'affichage de la liste des opérations
+        function updateOperationList() {
+            const list = document.getElementById('operation-list');
+            list.innerHTML = '';
+            
+            userOperations.forEach((op, index) => {
+                const item = document.createElement('div');
+                item.className = 'operation-item';
+                
+                const resultText = `${op.result.numerator}/${op.result.denominator}`;
+                
+                const span = document.createElement('span');
+                span.textContent = `${op.expression} = ${resultText}`;
+                
+                const button = document.createElement('button');
+                button.textContent = 'Supprimer';
+                button.onclick = function() {
+                    removeOperation(index);
+                };
+                
+                item.appendChild(span);
+                item.appendChild(button);
+                list.appendChild(item);
+            });
+        }
+        
+        // Supprimer une opération de la liste
+        function removeOperation(index) {
+            userOperations.splice(index, 1);
+            updateOperationList();
+        }
+        
+        // Revenir au mode élève
+        function backToStudentMode() {
+            document.getElementById('teacher-panel').classList.add('hidden');
+            document.getElementById('student-panel').classList.remove('hidden');
+        }
+        
+        // Générer un exercice avec les opérations choisies
+        function generateExercise() {
+            const maxOperations = parseInt(document.getElementById('max-operations').value);
+            
+            if (userOperations.length === 0) {
+                alert("Veuillez ajouter au moins une opération.");
+                return;
+            }
+            
+            if (userOperations.length > maxOperations) {
+                alert(`Vous avez ajouté ${userOperations.length} opérations, mais le maximum est fixé à ${maxOperations}. Veuillez réduire le nombre d'opérations ou augmenter la limite.`);
+                return;
+            }
+            
+            operations = [...userOperations];
+            createGameElements();
+            backToStudentMode();
+        }
+        
+        // Initialiser les événements
+        function initEvents() {
+            // Bouton Mode Enseignant
+            document.getElementById('teacher-mode-btn').addEventListener('click', showPasswordModal);
+            
+            // Boutons Modal Mot de passe
+            document.getElementById('validate-password-btn').addEventListener('click', validatePassword);
+            document.getElementById('cancel-password-btn').addEventListener('click', closePasswordModal);
+            
+            // Touche Entrée sur le champ de mot de passe
+            document.getElementById('password-input').addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    validatePassword();
+                }
+            });
+            
+            // Boutons Mode Enseignant
+            document.getElementById('add-operation-btn').addEventListener('click', addOperation);
+            document.getElementById('generate-exercise-btn').addEventListener('click', generateExercise);
+            document.getElementById('back-to-student-btn').addEventListener('click', backToStudentMode);
+        }
+        
+        // Initialiser l'application
+        function init() {
+            createGameElements();
+            initEvents();
+        }
+        
+        // Lancer l'application au chargement de la page
+        window.addEventListener('DOMContentLoaded', init);
+    })();
+    </script>
 </body>
 </html>
