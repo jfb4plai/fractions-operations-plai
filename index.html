@@ -851,14 +851,10 @@
             closePasswordModal();
             document.getElementById('student-panel').classList.add('hidden');
             document.getElementById('teacher-panel').classList.remove('hidden');
-                
-                // Initialiser la liste des opérations si elle est vide
-                if (userOperations.length === 0) {
-                    userOperations = [...defaultOperations];
-                    updateOperationList();
-                }
-            } else {
-                alert('Mot de passe incorrect !');
+            // Initialiser la liste des opérations si elle est vide
+            if (userOperations.length === 0) {
+                userOperations = [...defaultOperations];
+                updateOperationList();
             }
         }
         
