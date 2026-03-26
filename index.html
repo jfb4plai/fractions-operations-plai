@@ -4,50 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PLAI - Jeu de Correspondance d'Opérations</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
-        :root { --plai: #1e1b4b; --pink: #ec4899; }
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: #f8f7ff;
+            font-family: Arial, sans-serif;
+            background-color: #f7f5f0;
             margin: 0;
-            padding: 0;
+            padding: 20px;
         }
+        
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
         }
+        
         header {
             display: flex;
             align-items: center;
-            gap: 16px;
-            padding: 0 24px;
-            background-color: var(--plai);
-            height: 52px;
-            margin-bottom: 24px;
+            gap: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        header img { height: 36px; }
-        .header-divider { width:1px; height:30px; background:rgba(255,255,255,.3); }
-        h1 { font-size: .95rem; font-weight: 500; margin: 0; color: rgba(255,255,255,.85); }
-        .mode-switch { text-align: right; margin-bottom: 16px; }
+        
+        h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+        
+        .mode-switch {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        
         button {
-            padding: 8px 16px;
-            background-color: var(--pink);
+            padding: 8px 15px;
+            background-color: #4a90e2;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 5px;
             cursor: pointer;
-            margin: 4px;
-            font-weight: 600;
-            transition: opacity .2s;
+            margin: 5px;
         }
-        button:hover { opacity: .85; }
+        
         .toggle-button {
-            background-color: #f3f4f6;
-            color: #374151;
-            border: 1px solid #d1d5db;
+            background-color: #e9e5d9;
+            color: #333;
         }
-        .toggle-button:hover { background-color: #e5e7eb; opacity: 1; }
         
         .content-panel {
             background-color: white;
@@ -205,9 +210,8 @@
 <body>
     <div class="container">
         <header>
-            <img src="PLAI.jpg" alt="Logo PLAI">
-            <div class="header-divider"></div>
-            <h1>Fractions — Opérations · Jeu de correspondance</h1>
+            <img src="PLAI.jpg" alt="Logo PLAI" style="width: 180px; height: auto;">
+            <h1>Jeu de Correspondance d'Opérations sur les Fractions</h1>
         </header>
         
         <div class="mode-switch">
@@ -275,14 +279,16 @@
             </div>
         </div>
         
-        <!-- Boîte de dialogue de mot de passe -->
+        <!-- Boîte de dialogue de connexion -->
         <div id="password-modal" class="password-modal">
             <div class="modal-content">
                 <h3>Mode Enseignant</h3>
-                <p>Veuillez entrer le mot de passe :</p>
-                <input type="text" id="password-input">
+                <p>Connectez-vous avec votre compte PLAI :</p>
+                <input type="email" id="login-email" placeholder="Email" autocomplete="email" style="display:block;width:100%;margin-bottom:8px;padding:6px;">
+                <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password" style="display:block;width:100%;margin-bottom:8px;padding:6px;">
+                <div id="login-error" style="color:#e53e3e;font-size:13px;min-height:18px;margin-bottom:6px;"></div>
                 <div>
-                    <button id="validate-password-btn">Valider</button>
+                    <button id="validate-password-btn">Se connecter</button>
                     <button id="cancel-password-btn">Annuler</button>
                 </div>
             </div>
@@ -811,28 +817,40 @@
             });
         }
         
+        // Supabase
+        const _sb = supabase.createClient(
+            'https://otiorljbujqzruulmqrs.supabase.co',
+            'sb_publishable_txhpqAZpx_Yth8zFQ3J0QQ_f9QVU0nE'
+        );
+
         // Fonctions pour le mode enseignant
-        
-        // Afficher la modale de mot de passe
+
+        // Afficher la modale de connexion
         function showPasswordModal() {
             document.getElementById('password-modal').style.display = 'flex';
-            document.getElementById('password-input').value = '';
-            document.getElementById('password-input').focus();
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-error').textContent = '';
+            document.getElementById('login-email').focus();
         }
-        
-        // Fermer la modale de mot de passe
+
+        // Fermer la modale
         function closePasswordModal() {
             document.getElementById('password-modal').style.display = 'none';
         }
-        
-        // Valider le mot de passe
-        function validatePassword() {
-            const password = document.getElementById('password-input').value;
-            
-            if (password === 'PLAI') {
-                closePasswordModal();
-                document.getElementById('student-panel').classList.add('hidden');
-                document.getElementById('teacher-panel').classList.remove('hidden');
+
+        // Connexion enseignant via Supabase
+        async function validateLogin() {
+            const email  = document.getElementById('login-email').value.trim();
+            const pwd    = document.getElementById('login-password').value;
+            const errEl  = document.getElementById('login-error');
+            errEl.textContent = '';
+            if (!email || !pwd) { errEl.textContent = 'Email et mot de passe requis.'; return; }
+            const { data, error } = await _sb.auth.signInWithPassword({ email, password: pwd });
+            if (error) { errEl.textContent = 'Identifiants incorrects.'; return; }
+            closePasswordModal();
+            document.getElementById('student-panel').classList.add('hidden');
+            document.getElementById('teacher-panel').classList.remove('hidden');
                 
                 // Initialiser la liste des opérations si elle est vide
                 if (userOperations.length === 0) {
@@ -921,6 +939,7 @@
         
         // Revenir au mode élève
         function backToStudentMode() {
+            _sb.auth.signOut();
             document.getElementById('teacher-panel').classList.add('hidden');
             document.getElementById('student-panel').classList.remove('hidden');
         }
@@ -950,13 +969,13 @@
             document.getElementById('teacher-mode-btn').addEventListener('click', showPasswordModal);
             
             // Boutons Modal Mot de passe
-            document.getElementById('validate-password-btn').addEventListener('click', validatePassword);
+            document.getElementById('validate-password-btn').addEventListener('click', validateLogin);
             document.getElementById('cancel-password-btn').addEventListener('click', closePasswordModal);
-            
-            // Touche Entrée sur le champ de mot de passe
-            document.getElementById('password-input').addEventListener('keyup', function(event) {
+
+            // Touche Entrée sur le champ mot de passe
+            document.getElementById('login-password').addEventListener('keyup', function(event) {
                 if (event.key === 'Enter') {
-                    validatePassword();
+                    validateLogin();
                 }
             });
             
