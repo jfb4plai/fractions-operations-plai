@@ -293,30 +293,30 @@
                       <button id="cancel-password-btn">Annuler</button>
                   </div>
                   <div style="text-align:center;margin-top:8px;display:flex;flex-direction:column;gap:4px">
-                    <button style="font-size:12px;background:none;border:none;color:#6b7280;cursor:pointer;text-decoration:underline" onclick="showSignupSection()">Pas encore de compte ? Créer un compte</button>
-                    <button style="font-size:12px;background:none;border:none;color:#6b7280;cursor:pointer;text-decoration:underline" onclick="showResetSection()">Mot de passe oublié ?</button>
+                    <button id="show-signup-btn" style="font-size:12px;background:none;border:none;color:#6b7280;cursor:pointer;text-decoration:underline">Pas encore de compte ? Créer un compte</button>
+                    <button id="show-reset-btn" style="font-size:12px;background:none;border:none;color:#6b7280;cursor:pointer;text-decoration:underline">Mot de passe oublié ?</button>
                   </div>
                 </div>
                 <div id="signup-form-section" style="display:none">
                   <p style="font-size:13px;color:#6b7280;margin-bottom:10px">Crée ton compte enseignant PLAI. Il te servira pour toutes les apps PLAI qui utilisent la même connexion.</p>
                   <input type="email" id="signup-email" placeholder="Email professionnel (ex. prenom.nom@ecole.be)" style="display:block;width:100%;margin-bottom:8px;padding:6px;">
-                  <input type="password" id="signup-password" placeholder="Mot de passe (6 caractères minimum)" style="display:block;width:100%;margin-bottom:8px;padding:6px;" onkeydown="if(event.key==='Enter')doSignup()">
+                  <input type="password" id="signup-password" placeholder="Mot de passe (6 caractères minimum)" style="display:block;width:100%;margin-bottom:8px;padding:6px;">
                   <div id="signup-msg" style="font-size:13px;min-height:16px;margin-bottom:6px;"></div>
-                  <button onclick="doSignup()">Créer le compte</button>
-                  <button onclick="hideSignupSection()" style="margin-left:6px">Retour</button>
+                  <button id="do-signup-btn">Créer le compte</button>
+                  <button id="hide-signup-btn" style="margin-left:6px">Retour</button>
                 </div>
                 <div id="reset-form-section" style="display:none">
                   <p style="font-size:13px;color:#6b7280;margin-bottom:10px">Entre ton email pour recevoir un lien de réinitialisation.</p>
                   <input type="email" id="reset-email" placeholder="Email" style="display:block;width:100%;margin-bottom:8px;padding:6px;">
                   <div id="reset-msg" style="font-size:13px;min-height:16px;margin-bottom:6px;"></div>
-                  <button onclick="sendReset()">Envoyer le lien</button>
-                  <button onclick="hideResetSection()" style="margin-left:6px">Annuler</button>
+                  <button id="send-reset-btn">Envoyer le lien</button>
+                  <button id="hide-reset-btn" style="margin-left:6px">Annuler</button>
                 </div>
                 <div id="newpwd-section" style="display:none">
                   <p style="font-size:13px;color:#6b7280;margin-bottom:10px">Choisis un nouveau mot de passe.</p>
                   <input type="password" id="new-pwd-input" placeholder="Nouveau mot de passe (6 car. min.)" style="display:block;width:100%;margin-bottom:8px;padding:6px;">
                   <div id="newpwd-err" style="color:#e53e3e;font-size:13px;min-height:16px;margin-bottom:6px;"></div>
-                  <button onclick="saveNewPassword()">Enregistrer</button>
+                  <button id="save-newpwd-btn">Enregistrer</button>
                 </div>
             </div>
         </div>
@@ -1062,6 +1062,18 @@
             // Boutons Modal Mot de passe
             document.getElementById('validate-password-btn').addEventListener('click', validateLogin);
             document.getElementById('cancel-password-btn').addEventListener('click', closePasswordModal);
+
+            // Liens création de compte / mot de passe oublié + boutons associés
+            document.getElementById('show-signup-btn').addEventListener('click', showSignupSection);
+            document.getElementById('show-reset-btn').addEventListener('click', showResetSection);
+            document.getElementById('do-signup-btn').addEventListener('click', doSignup);
+            document.getElementById('hide-signup-btn').addEventListener('click', hideSignupSection);
+            document.getElementById('send-reset-btn').addEventListener('click', sendReset);
+            document.getElementById('hide-reset-btn').addEventListener('click', hideResetSection);
+            document.getElementById('save-newpwd-btn').addEventListener('click', saveNewPassword);
+            document.getElementById('signup-password').addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') { doSignup(); }
+            });
 
             // Touche Entrée sur le champ mot de passe
             document.getElementById('login-password').addEventListener('keyup', function(event) {
